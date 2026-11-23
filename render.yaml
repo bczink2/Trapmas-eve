@@ -1,0 +1,65 @@
+# Render Blueprint. Connect https://github.com/bczink2/trapmas-eve (private) and apply this file.
+# The public URL is Render's hostname, https://trapmas-eve.onrender.com, once that name is free.
+services:
+  - type: web
+    name: trapmas-eve
+    runtime: node
+    repo: https://github.com/bczink2/trapmas-eve
+    branch: main
+    region: ohio
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
+      - key: DRAFT_TTL_DAYS
+        value: "14"
+      - key: EMAIL_PROVIDER
+        value: gmail
+      - key: EMAIL_FROM_NAME
+        value: Dream 2 Reality
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://trapmas-eve.onrender.com
+      # Generated on the service. Do not type these.
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_EXPORT_TOKEN
+        generateValue: true
+      # Set these in the Render dashboard. Leave a secret blank until you have it.
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: GOOGLE_DRIVE_FOLDER_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        sync: false
+      - key: GOOGLE_OAUTH_REFRESH_TOKEN
+        sync: false
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SQUARE_ACCESS_TOKEN
+        sync: false
+      - key: SQUARE_LOCATION_ID
+        sync: false
+      - key: SQUARE_WEBHOOK_SIGNATURE_KEY
+        sync: false
+      - key: SQUARE_WEBHOOK_URL
+        sync: false
