@@ -10,6 +10,7 @@ type Row = {
   publicId: string;
   artistName: string;
   email: string;
+  phone: string;
   status: SubmissionStatus;
   fileHold?: "disk" | "pending" | "drive" | "computer";
 };
@@ -74,6 +75,8 @@ export function Dashboard() {
                 <Link href={`/admin/submissions/${row.id}`} className="flex items-center justify-between gap-3 px-4 py-3">
                   <span>
                     <span className="text-primary">{row.publicId}</span> {row.artistName}
+                    <span className="block text-sm text-foreground">{row.phone || "No phone"}</span>
+                    {row.email ? null : <span className="block text-xs text-muted-foreground">No email — contact by phone</span>}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {STATUS_LABELS[row.status] || row.status}

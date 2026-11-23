@@ -100,7 +100,11 @@ export function cell(value: unknown): string {
 }
 
 export function submissionRow(submission: Submission): string[] {
-  return SUBMISSION_KEYS.map((key) => cell(submission[key]));
+  return SUBMISSION_KEYS.map((key) => {
+    const value = cell(submission[key]);
+    // A blank cell in the middle of a Sheets row can be dropped on read and shift later columns.
+    return value === "" ? " " : value;
+  });
 }
 
 export function blankSubmission(partial: Partial<Submission>): Submission {
@@ -118,14 +122,14 @@ export function submissionFromRow(header: string[], row: string[]): Submission |
   const submission = blankSubmission({});
   for (const key of SUBMISSION_KEYS) {
     const raw = map.get(key);
-    if (raw == null || raw === "") continue;
+    if (raw == null || raw.trim() === "") continue;
     if (BOOL_KEYS.has(key)) {
       (submission[key] as boolean) = raw === "1" || raw === "true";
     } else if (NUM_KEYS.has(key)) {
       const parsed = Number(raw);
       (submission[key] as number) = Number.isFinite(parsed) ? parsed : 0;
     } else {
-      (submission[key] as string) = raw;
+      (submission[key] as string) = raw.trim();
     }
   }
   submission.status = (map.get("status") || "draft") as SubmissionStatus;

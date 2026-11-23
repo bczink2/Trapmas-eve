@@ -3,7 +3,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { listEmails, listEvents, updateSettings } from "@/lib/db/repo";
+import { listEmails, listEvents, listSubmissions, updateSettings } from "@/lib/db/repo";
 import { openDatabase } from "@/lib/db/index";
 import type { Database } from "@/lib/db/sql";
 import { sqliteStore, type Store } from "@/lib/store";
@@ -227,6 +227,77 @@ describe("submission payments", () => {
     expect(refunded.refundNote).toMatch(/Cash App/);
   });
 
+  it("records a decision without email and does not try to send one", async () => {
+    const minimal: ProfileInput = {
+      ...profile,
+      email: "",
+      instagram: "",
+      bio: "",
+      organizerNote: "",
+      song1Title: "",
+      song2Title: "",
+    };
+    const { submission } = await startDraft(store, minimal);
+    expect(submission.email).toBe("");
+    expect(submission.city).toBe("Greensboro");
+    expect(submission.state).toBe("AL");
+    let current = submission;
+    current = await storeArtistFile(store, current, "song1", {
+      filename: "eve.mp3",
+      mime: "audio/mpeg",
+      bytes: mp3(),
+    });
+    current = await storeArtistFile(store, current, "song2", {
+      filename: "midnight.mp3",
+      mime: "audio/mpeg",
+      bytes: mp3(),
+    });
+    current = await storeArtistFile(store, current, "photo", {
+      filename: "press.jpg",
+      mime: "image/jpeg",
+      bytes: jpeg(),
+    });
+    current = await saveAcks(store, current, {
+      ackTerms: true,
+      ackPrivacy: true,
+      ackRefund: true,
+      ackRights: true,
+      ackPhoto: true,
+      ackFee: true,
+    });
+    current = await markAwaitingPayment(store, current);
+    const claimed = await claimCashAppPayment(store, current, {
+      paidFrom: "Alex Carter",
+      paymentNote: `${current.publicId} fee`,
+    });
+    expect(claimed.emailStatus).toBe("skipped_no_email");
+    const paid = await markPaid(store, current.id, {
+      actor: "admin",
+      amountCents: 2500,
+      reference: current.publicId,
+    });
+    expect(paid.emailStatus).toBe("skipped_no_email");
+    const approved = await decideSubmission(store, paid.submission, "approved", "", "admin");
+    expect(approved.submission.status).toBe("approved");
+    expect(approved.emailStatus).toBe("skipped_no_email");
+    const waitlisted = await decideSubmission(store, approved.submission, "waitlisted", "", "admin");
+    expect(waitlisted.submission.status).toBe("waitlisted");
+    const declined = await decideSubmission(store, waitlisted.submission, "declined", "Not this time", "admin");
+    expect(declined.submission.status).toBe("declined");
+    expect(declined.emailStatus).toBe("skipped_no_email");
+    const emails = await listEmails(db, current.id);
+    expect(emails.length).toBeGreaterThan(0);
+    expect(emails.every((email) => email.status === "skipped_no_email")).toBe(true);
+    const found = await listSubmissions(db, { q: "2055550148", limit: 10, offset: 0 });
+    expect(found.rows.some((row) => row.id === current.id)).toBe(true);
+  });
+
+  it("rejects a draft that is missing city or state", async () => {
+    await expect(startDraft(store, { ...profile, city: "" })).rejects.toThrow(/city/i);
+    await expect(startDraft(store, { ...profile, state: "" })).rejects.toThrow(/state/i);
+    await expect(startDraft(store, { ...profile, email: "not-an-email" })).rejects.toThrow(/email/i);
+  });
+
   it("deletes the submission and its files", async () => {
     const draft = await readySubmission(store);
     expect(fs.existsSync(path.join(uploadDir, draft.photoKey))).toBe(true);
@@ -253,6 +324,17 @@ describe("provider adapters", () => {
     expect(body.get("metadata[submissionId]")).toBe("sub_1");
     expect(body.get("metadata[publicId]")).toBe("TRAP-014");
     expect(body.get("client_reference_id")).toBe("sub_1");
+    expect(body.get("customer_email")).toBe("alex@example.com");
+    const withoutEmail = buildStripeCheckoutBody({
+      submissionId: "sub_1",
+      publicId: "TRAP-014",
+      amountCents: 2500,
+      customerEmail: "  ",
+      eventName: "TRAPMAS EVE 2026",
+      successUrl: "https://example.com/ok",
+      cancelUrl: "https://example.com/back",
+    });
+    expect(withoutEmail.get("customer_email")).toBeNull();
 
     const payload = '{"id":"evt_1"}';
     const secret = "whsec_test";

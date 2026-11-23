@@ -14,6 +14,7 @@ type Row = {
   publicId: string;
   artistName: string;
   email: string;
+  phone: string;
   status: SubmissionStatus;
   genre: string;
   createdAt: string;
@@ -52,7 +53,7 @@ export function SubmissionsTable() {
       <h1 className="display text-5xl">Submissions</h1>
       <div className="grid gap-3 sm:grid-cols-[1fr_180px]">
         <Input
-          placeholder="Search name, email, TRAP id, Cash App"
+          placeholder="Search name, phone, email, TRAP id, Cash App"
           value={q}
           onChange={(event) => setQ(event.target.value)}
           className="h-11 bg-black/25"
@@ -83,6 +84,7 @@ export function SubmissionsTable() {
             <TableRow>
               <TableHead>ID</TableHead>
               <TableHead>Artist</TableHead>
+              <TableHead>Phone</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Email</TableHead>
             </TableRow>
@@ -96,10 +98,11 @@ export function SubmissionsTable() {
                   </Link>
                 </TableCell>
                 <TableCell>{row.artistName}</TableCell>
+                <TableCell className="font-medium">{row.phone || "—"}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{STATUS_LABELS[row.status] || row.status}</Badge>
                 </TableCell>
-                <TableCell>{row.email}</TableCell>
+                <TableCell>{row.email || "No email"}</TableCell>
               </TableRow>
             ))}
           </TableBody>

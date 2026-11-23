@@ -90,6 +90,19 @@ export function alreadyDownloaded(localBytes, remoteBytes) {
   return Number(localBytes) > 0 && Number(localBytes) === Number(remoteBytes);
 }
 
+function textValue(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function requiredLine(label, value) {
+  return `${label}: ${textValue(value)}`;
+}
+
+function optionalLine(label, value) {
+  const text = textValue(value);
+  return text ? `${label}: ${text}` : "";
+}
+
 export function infoText(submission, event) {
   const dollars =
     Number.isFinite(submission.paidAmountCents) && submission.paidAmountCents > 0
@@ -98,30 +111,30 @@ export function infoText(submission, event) {
   const lines = [
     event.eventName || "TRAPMAS EVE",
     event.featuredArtist ? `Featuring: ${event.featuredArtist}` : "",
-    `Submission: ${submission.publicId}`,
-    `Status: ${submission.status}`,
-    `Artist / stage name: ${submission.artistName}`,
-    `Legal name: ${submission.legalName}`,
-    `Email: ${submission.email}`,
-    `Phone: ${submission.phone}`,
-    `City: ${submission.city}`,
-    `State: ${submission.state}`,
-    `Instagram: ${submission.instagram}`,
-    `Genre: ${submission.genre}`,
-    `Song 1: ${submission.song1Title}`,
-    `Song 2: ${submission.song2Title}`,
-    `Photo file: ${submission.photoName}`,
-    `Bio: ${submission.bio}`,
-    `Note to BC: ${submission.organizerNote}`,
-    `Payer name or Cash App: ${submission.payerName}`,
-    `Payer $Cashtag: ${submission.payerCashtag}`,
-    `Payment note: ${submission.paymentNote}`,
-    `Payment claimed: ${submission.paymentClaimedAt}`,
-    `Marked paid: ${submission.paidAt}`,
-    `Marked paid by: ${submission.paidBy}`,
-    dollars ? `Amount recorded: ${dollars}` : "Amount recorded:",
-    `Payment reference: ${submission.paymentReference}`,
-    `Submitted: ${submission.createdAt}`,
+    requiredLine("Submission", submission.publicId),
+    requiredLine("Status", submission.status),
+    requiredLine("Artist / stage name", submission.artistName),
+    requiredLine("Legal name", submission.legalName),
+    optionalLine("Email", submission.email),
+    requiredLine("Phone", submission.phone),
+    requiredLine("City", submission.city),
+    requiredLine("State", submission.state),
+    optionalLine("Instagram", submission.instagram),
+    requiredLine("Genre", submission.genre),
+    optionalLine("Song 1", submission.song1Title),
+    optionalLine("Song 2", submission.song2Title),
+    optionalLine("Photo file", submission.photoName),
+    optionalLine("Bio", submission.bio),
+    optionalLine("Note to BC", submission.organizerNote),
+    optionalLine("Payer name or Cash App", submission.payerName),
+    optionalLine("Payer $Cashtag", submission.payerCashtag),
+    optionalLine("Payment note", submission.paymentNote),
+    optionalLine("Payment claimed", submission.paymentClaimedAt),
+    optionalLine("Marked paid", submission.paidAt),
+    optionalLine("Marked paid by", submission.paidBy),
+    dollars ? `Amount recorded: ${dollars}` : "",
+    optionalLine("Payment reference", submission.paymentReference),
+    optionalLine("Submitted", submission.createdAt),
   ];
   return `${lines.filter((line) => line !== "").join("\n")}\n`;
 }

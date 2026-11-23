@@ -72,7 +72,7 @@ export default async function HomePage() {
           <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
             <li>Send two MP3s and one photo.</li>
             <li>Pay the fee on Cash App and put your TRAP number in the note.</li>
-            <li>Our team confirms the payment, then you get the confirmation email.</li>
+            <li>Our team confirms the payment. If you left an email, the confirmation goes there. If you did not, save your TRAP number.</li>
           </ol>
         </section>
         <section id="apply" className="scroll-mt-6 space-y-4 pb-8">

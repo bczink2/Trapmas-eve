@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatBytes, formatUsd } from "@/lib/money";
+import { parseProfile } from "@/lib/profile";
 import type { PublicSettings } from "@/lib/types";
 
 type FileMeta = { name: string; bytes: number } | null;
@@ -99,10 +100,10 @@ export function ApplyWizard({
     legalName: "",
     email: "",
     phone: "",
-    city: "Greensboro",
-    state: "AL",
+    city: "",
+    state: "",
     instagram: "",
-    genre: settings.genreOptions[0] || "Trap",
+    genre: "",
     bio: "",
     organizerNote: "",
     song1Title: "",
@@ -157,6 +158,11 @@ export function ApplyWizard({
   }
 
   async function saveProfile() {
+    const parsed = parseProfile(form);
+    if (!parsed.ok) {
+      setError(parsed.error);
+      return;
+    }
     setError("");
     setBusy(true);
     try {
@@ -217,10 +223,6 @@ export function ApplyWizard({
   async function continueToAgreements() {
     if (!application?.files.photo || !application.files.song1 || !application.files.song2) {
       setError("Upload both MP3s and the photo before you continue.");
-      return;
-    }
-    if (!form.song1Title.trim() || !form.song2Title.trim()) {
-      setError("Name both songs.");
       return;
     }
     setBusy(true);
@@ -352,37 +354,41 @@ export function ApplyWizard({
           }}
         >
           <Pair>
-            <Field label="Artist / stage name" value={form.artistName} onChange={(value) => update("artistName", value)} required />
-            <Field label="Legal name" value={form.legalName} onChange={(value) => update("legalName", value)} required />
-          </Pair>
-          <Pair>
-            <Field label="Email" type="email" value={form.email} onChange={(value) => update("email", value)} required />
+            <Field label="Real / full name" value={form.legalName} onChange={(value) => update("legalName", value)} required />
             <Field label="Phone" type="tel" value={form.phone} onChange={(value) => update("phone", value)} required />
           </Pair>
-          <Pair>
-            <Field label="City" value={form.city} onChange={(value) => update("city", value)} required />
-            <Field label="State" value={form.state} onChange={(value) => update("state", value)} required />
-          </Pair>
+          <Field label="Artist / stage name" value={form.artistName} onChange={(value) => update("artistName", value)} required />
           <div className="grid gap-2">
-            <Label htmlFor="genre">Genre</Label>
+            <Label htmlFor="genre">
+              Genre <span className="text-primary">*</span>
+            </Label>
             <select
               id="genre"
+              required
               className={`${fieldClass} rounded-lg border border-input px-3`}
               value={form.genre}
               onChange={(event) => update("genre", event.target.value)}
             >
+              <option value="">Select a genre</option>
               {settings.genreOptions.map((genre) => (
-                <option key={genre}>{genre}</option>
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
               ))}
             </select>
           </div>
+          <Pair>
+            <Field label="City" value={form.city} onChange={(value) => update("city", value)} required />
+            <Field label="State" value={form.state} onChange={(value) => update("state", value)} required />
+          </Pair>
+          <Field label="Email" type="email" value={form.email} onChange={(value) => update("email", value)} />
           <Field label="Instagram" value={form.instagram} onChange={(value) => update("instagram", value)} />
           <div className="grid gap-2">
-            <Label htmlFor="bio">Short bio</Label>
+            <Label htmlFor="bio">Short bio <span className="text-muted-foreground">(optional)</span></Label>
             <Textarea id="bio" value={form.bio} onChange={(event) => update("bio", event.target.value)} className="min-h-24 bg-black/25" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="note">Anything our team should know</Label>
+            <Label htmlFor="note">Anything our team should know <span className="text-muted-foreground">(optional)</span></Label>
             <Textarea id="note" value={form.organizerNote} onChange={(event) => update("organizerNote", event.target.value)} className="bg-black/25" />
           </div>
           <Button type="submit" size="lg" className="h-12" disabled={busy}>
@@ -393,21 +399,23 @@ export function ApplyWizard({
 
       {step === 2 && application ? (
         <div className="space-y-4">
-          <Field label="Song 1 title" value={form.song1Title} onChange={(value) => update("song1Title", value)} required />
+          <Field label="Song 1 title" value={form.song1Title} onChange={(value) => update("song1Title", value)} />
           <Uploader
             label="Song 1 MP3, 20 MB max"
             accept="audio/mpeg,.mp3"
             meta={application.files.song1}
             progress={progress.song1}
             onFile={(file) => void sendFile("song1", file)}
+            required
           />
-          <Field label="Song 2 title" value={form.song2Title} onChange={(value) => update("song2Title", value)} required />
+          <Field label="Song 2 title" value={form.song2Title} onChange={(value) => update("song2Title", value)} />
           <Uploader
             label="Song 2 MP3, 20 MB max"
             accept="audio/mpeg,.mp3"
             meta={application.files.song2}
             progress={progress.song2}
             onFile={(file) => void sendFile("song2", file)}
+            required
           />
           <Uploader
             label="Photo, JPG or PNG, 10 MB max"
@@ -415,6 +423,7 @@ export function ApplyWizard({
             meta={application.files.photo}
             progress={progress.photo}
             onFile={(file) => void sendFile("photo", file)}
+            required
           />
           {previews.photo ? (
             <img src={previews.photo} alt="Preview of your submitted photo" className="max-h-72 w-full rounded-xl object-contain" />
@@ -545,8 +554,16 @@ export function ApplyWizard({
         <div className="space-y-3 rounded-2xl border border-primary/40 bg-card p-5">
           <h2 className="display text-4xl text-primary">Payment pending</h2>
           <p>
-            {application.publicId} is saved for {application.artistName}. Our team still has to match your Cash App payment. The confirmation email goes out only after that.
+            {application.publicId} is saved for {application.artistName}. Our team still has to match your Cash App payment.
           </p>
+          {application.email.trim() ? (
+            <p>The confirmation email goes out only after that.</p>
+          ) : (
+            <p className="rounded-xl border border-primary/40 bg-black/30 p-3">
+              No email was entered, so nothing will be emailed. Save your submission id{" "}
+              <strong className="text-primary">{application.publicId}</strong>. Our team will use your phone number to reach you.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">Keep the resume link if you need to check back on this phone.</p>
         </div>
       ) : null}
@@ -583,7 +600,14 @@ function Field({
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   return (
     <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}{" "}
+        {required ? (
+          <span className="text-primary">*</span>
+        ) : (
+          <span className="text-muted-foreground">(optional)</span>
+        )}
+      </Label>
       <Input id={id} className={fieldClass} type={type} required={required} value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
   );
@@ -595,16 +619,21 @@ function Uploader({
   meta,
   progress,
   onFile,
+  required = false,
 }: {
   label: string;
   accept: string;
   meta: FileMeta;
   progress?: number;
   onFile: (file: File) => void;
+  required?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border p-3">
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {required ? <span className="text-primary"> *</span> : null}
+      </Label>
       <Input
         className="mt-2 h-11 bg-black/25"
         type="file"

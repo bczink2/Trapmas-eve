@@ -42,7 +42,7 @@ async function deliver(
   subject: string,
   text: string,
   html: string,
-): Promise<{ status: "sent" | "logged_dev" | "skipped_unconfigured" | "failed"; detail: string }> {
+): Promise<{ status: "sent" | "logged_dev" | "skipped_unconfigured" | "skipped_no_email" | "failed"; detail: string }> {
   const provider = activeEmailProvider();
   if (provider === "log") {
     const status = process.env.NODE_ENV === "production" ? "skipped_unconfigured" : "logged_dev";
@@ -105,14 +105,26 @@ export async function sendTemplateEmail(
     template: EmailTemplateName;
     note?: string;
   },
-): Promise<{ status: "sent" | "logged_dev" | "skipped_unconfigured" | "failed"; subject: string }> {
+): Promise<{ status: "sent" | "logged_dev" | "skipped_unconfigured" | "skipped_no_email" | "failed"; subject: string }> {
   const copy = templateCopy(input.settings, input.template);
   const vars = emailVars(input.settings, input.submission, input.note);
   const subject = renderTemplate(copy.subject, vars);
   const text = renderTemplate(copy.body, vars);
   const html = textToEmailHtml(text);
+  const to = input.submission.email.trim();
+  if (!to) {
+    await store.logEmail({
+      submissionId: input.submission.id,
+      template: input.template,
+      toEmail: "",
+      subject,
+      status: "skipped_no_email",
+      detail: "No email address on the application. Nothing was sent.",
+    });
+    return { status: "skipped_no_email", subject };
+  }
 
-  const delivered = await deliver(input.settings, input.submission.email, subject, text, html);
+  const delivered = await deliver(input.settings, to, subject, text, html);
   await store.logEmail({
     submissionId: input.submission.id,
     template: input.template,

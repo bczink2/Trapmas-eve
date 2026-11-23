@@ -209,7 +209,7 @@ export function sheetsStoreFrom(book: SheetBook): Store {
       if (query.status) rows = rows.filter((row) => row.status === query.status);
       if (q) {
         rows = rows.filter((row) =>
-          [row.publicId, row.artistName, row.legalName, row.email, row.payerName, row.payerCashtag, row.paymentNote]
+          [row.publicId, row.artistName, row.legalName, row.email, row.phone, row.payerName, row.payerCashtag, row.paymentNote]
             .join("\n")
             .toLowerCase()
             .includes(q),

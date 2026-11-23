@@ -662,9 +662,9 @@ export async function listSubmissions(
   const like = q ? `%${q}%` : "";
   const status = query.status ?? "";
   const where = `WHERE (? = '' OR status = ?) AND (? = '' OR lower(public_id) LIKE ? OR lower(artist_name) LIKE ?
-    OR lower(legal_name) LIKE ? OR lower(email) LIKE ? OR lower(payer_name) LIKE ?
+    OR lower(legal_name) LIKE ? OR lower(email) LIKE ? OR lower(phone) LIKE ? OR lower(payer_name) LIKE ?
     OR lower(payer_cashtag) LIKE ? OR lower(payment_note) LIKE ?)`;
-  const params = [status, status, like, like, like, like, like, like, like, like];
+  const params = [status, status, like, like, like, like, like, like, like, like, like];
   const totalRow = await db.get<{ total: number }>(
     `SELECT COUNT(*) AS total FROM submissions ${where}`,
     params,

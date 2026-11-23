@@ -92,6 +92,7 @@ export function Review({ id }: { id: string }) {
   if (!detail && !error) return <p>Loading submission…</p>;
   if (!detail) return <p className="text-destructive">{error}</p>;
   const submission = detail.submission;
+  const hasEmail = Boolean(submission.email.trim());
 
   return (
     <div className="space-y-6">
@@ -137,11 +138,20 @@ export function Review({ id }: { id: string }) {
               </a>
             </>
           )}
+          <div className="rounded-2xl border border-primary/40 bg-card p-4">
+            <p className="text-xs uppercase tracking-wide text-primary">Phone</p>
+            <p className="text-2xl">{submission.phone || "No phone on file"}</p>
+            {hasEmail ? (
+              <p className="text-sm text-muted-foreground">{submission.email}</p>
+            ) : (
+              <p className="text-sm text-muted-foreground">No email on file. Contact this artist by phone.</p>
+            )}
+          </div>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <Info label="Legal name" value={submission.legalName} />
             <Info label="Email" value={submission.email} />
             <Info label="Phone" value={submission.phone} />
-            <Info label="City" value={`${submission.city}, ${submission.state}`} />
+            <Info label="City" value={[submission.city, submission.state].filter(Boolean).join(", ")} />
             <Info label="Genre" value={submission.genre} />
             <Info label="Instagram" value={submission.instagram} />
             <Info label="Paid from" value={submission.payerName} />
@@ -165,13 +175,17 @@ export function Review({ id }: { id: string }) {
               }}
             >
               <h2 className="text-lg">Mark paid</h2>
-              <p className="text-sm text-muted-foreground">Records who, when, the amount, and your reference. Then sends the confirmation email.</p>
+              <p className="text-sm text-muted-foreground">
+                {hasEmail
+                  ? "Records who, when, the amount, and your reference. Then sends the confirmation email."
+                  : `Records who, when, the amount, and your reference. No email is on file, so no confirmation is sent. Call or text ${submission.phone || "the artist"}.`}
+              </p>
               <Label htmlFor="amount">Amount received</Label>
               <Input id="amount" value={amount} onChange={(event) => setAmount(event.target.value)} className="bg-black/25" />
               <Label htmlFor="reference">Cash App reference or note</Label>
               <Input id="reference" value={reference} onChange={(event) => setReference(event.target.value)} className="bg-black/25" required />
               <Button type="submit" disabled={busy}>
-                Mark paid and send confirmation
+                {hasEmail ? "Mark paid and send confirmation" : "Mark paid"}
               </Button>
             </form>
           ) : null}
@@ -221,9 +235,11 @@ export function Review({ id }: { id: string }) {
       <Dialog open={Boolean(decision)} onOpenChange={(open) => !open && setDecision(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send the {decision} email?</DialogTitle>
+            <DialogTitle>{hasEmail ? `Send the ${decision} email?` : `Save the ${decision} decision?`}</DialogTitle>
             <DialogDescription>
-              This updates {submission.publicId} and emails {submission.email}. Nothing is sent until you confirm.
+              {hasEmail
+                ? `This updates ${submission.publicId} and emails ${submission.email}. Nothing is sent until you confirm.`
+                : `This updates ${submission.publicId}. No email is on file, so nothing is emailed. Reach ${submission.artistName} at ${submission.phone || "the phone number on file"}.`}
             </DialogDescription>
           </DialogHeader>
           <Textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Optional note included in the email" />
@@ -238,7 +254,7 @@ export function Review({ id }: { id: string }) {
                 if (ok) setDecision(null);
               }}
             >
-              Send email
+              {hasEmail ? "Send email" : "Save decision"}
             </Button>
           </DialogFooter>
         </DialogContent>

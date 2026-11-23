@@ -4,6 +4,7 @@ import {
   alreadyDownloaded,
   assignFolders,
   bundleFileNames,
+  infoText,
   mainFolderName,
   zipDownloadName,
 } from "@/lib/sync-lib.mjs";
@@ -43,6 +44,49 @@ describe("sync folder names", () => {
     expect(alreadyDownloaded(120, 120)).toBe(true);
     expect(alreadyDownloaded(10, 120)).toBe(false);
     expect(alreadyDownloaded(0, 0)).toBe(false);
+  });
+});
+
+describe("info.txt", () => {
+  it("keeps required contact fields and omits blank optional ones", () => {
+    const text = infoText(
+      {
+        publicId: "TRAP-009",
+        status: "paid",
+        artistName: "Night Drive",
+        legalName: "Alex Carter",
+        email: "",
+        phone: "2055550148",
+        city: "Birmingham",
+        state: "AL",
+        instagram: "",
+        genre: "Trap",
+        song1Title: "",
+        song2Title: "",
+        photoName: "",
+        bio: "Line one\n\nLine two",
+        organizerNote: "   ",
+        payerName: "",
+        payerCashtag: "",
+        paymentNote: "",
+        paymentClaimedAt: "",
+        paidAt: "",
+        paidBy: "",
+        paidAmountCents: 0,
+        paymentReference: "",
+        createdAt: "",
+      },
+      { eventName: "TRAPMAS EVE", featuredArtist: "" },
+    );
+    expect(text).toContain("Phone: 2055550148");
+    expect(text).toContain("City: Birmingham");
+    expect(text).toContain("State: AL");
+    expect(text).toContain("Genre: Trap");
+    expect(text).toContain("Bio: Line one Line two");
+    expect(text).not.toContain("Email:");
+    expect(text).not.toContain("Instagram:");
+    expect(text).not.toContain("Song 1:");
+    expect(text).not.toContain("Note to BC:");
   });
 });
 

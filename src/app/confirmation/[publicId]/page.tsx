@@ -26,12 +26,19 @@ export default async function ConfirmationPage({
           <>
             <p>Status: {label}.</p>
             <p className="text-muted-foreground">
-              {matches.status === "payment_pending"
-                ? "Our team still needs to confirm the Cash App payment. The confirmation email is sent after that."
-                : matches.paidAt
-                  ? "Payment is confirmed. Watch your email for the decision."
-                  : "This application is saved."}
+              {matches.email.trim()
+                ? matches.status === "payment_pending"
+                  ? "Our team still needs to confirm the Cash App payment. The confirmation email is sent after that."
+                  : matches.paidAt
+                    ? "Payment is confirmed. Watch your email for the decision."
+                    : "This application is saved."
+                : "No email was entered, so nothing will be emailed. Save this TRAP id. Our team will use your phone number to reach you."}
             </p>
+            {matches.email.trim() ? null : (
+              <p className="rounded-xl border border-primary/40 bg-card p-4 text-lg">
+                Save your submission id: <strong className="text-primary">{matches.publicId}</strong>
+              </p>
+            )}
           </>
         ) : (
           <p>If this payment was yours, the confirmation email arrives after our team marks it paid. This page does not show another artist&apos;s application.</p>

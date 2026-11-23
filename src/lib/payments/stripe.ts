@@ -16,7 +16,7 @@ export function buildStripeCheckoutBody(input: StripeCheckoutInput): URLSearchPa
   params.set("mode", "payment");
   params.set("success_url", input.successUrl);
   params.set("cancel_url", input.cancelUrl);
-  params.set("customer_email", input.customerEmail);
+  if (input.customerEmail.trim()) params.set("customer_email", input.customerEmail.trim());
   params.set("client_reference_id", input.submissionId);
   params.set("metadata[submissionId]", input.submissionId);
   params.set("metadata[publicId]", input.publicId);

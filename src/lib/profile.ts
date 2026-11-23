@@ -41,21 +41,20 @@ export function parseProfile(input: Partial<Record<keyof ProfileInput, unknown>>
     song2Title: clean(input.song2Title, 120),
   };
 
-  if (value.artistName.length < 2) return { ok: false, error: "Enter your artist name." };
-  if (value.legalName.length < 2) return { ok: false, error: "Enter your legal name." };
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email)) {
-    return { ok: false, error: "Enter a real email address." };
-  }
+  if (value.legalName.length < 2) return { ok: false, error: "Enter your real name." };
   const digits = value.phone.replace(/\D/g, "");
   if (digits.length < 10) return { ok: false, error: "Enter a phone number with area code." };
+  if (value.artistName.length < 2) return { ok: false, error: "Enter your artist name." };
+  if (!value.genre) return { ok: false, error: "Choose a genre." };
   if (value.city.length < 2) return { ok: false, error: "Enter your city." };
   if (value.state.length < 2) return { ok: false, error: "Enter your state." };
-  if (!value.genre) return { ok: false, error: "Choose a genre." };
+  if (value.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.email)) {
+    return { ok: false, error: "Enter a real email address, or leave email blank." };
+  }
   return { ok: true, value };
 }
 
 export function profileReadyForPayment(profile: ProfileInput): string | null {
-  if (!profile.song1Title) return "Name the first song.";
-  if (!profile.song2Title) return "Name the second song.";
-  return null;
+  const parsed = parseProfile(profile);
+  return parsed.ok ? null : parsed.error;
 }
