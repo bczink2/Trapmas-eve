@@ -37,6 +37,7 @@ yarn-error.log*
 # local database and uploads
 /data
 /trapmas-sync
+mac-agent/bin/
 
 # vercel
 .vercel
