@@ -100,6 +100,7 @@ export type PublicSettings = {
   instagramUrl: string;
   genreOptions: string[];
   legalIsDraft: boolean;
+  macOnline: boolean;
 };
 
 export type Submission = {

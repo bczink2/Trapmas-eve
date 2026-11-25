@@ -2,7 +2,9 @@ import { createHash } from "crypto";
 import { googleDriveClient, uploadResumable } from "@/lib/drive/google";
 import { AppError } from "@/lib/errors";
 import { concatChunks, prefixThenRest, splitPrefix } from "@/lib/files/stream";
-import { checkSize, safeFilename, validateUploadHeader } from "@/lib/files/validate";
+import { checkSize, limitFor, safeFilename, validateUpload, validateUploadHeader } from "@/lib/files/validate";
+import { macUpload } from "@/lib/mac/client";
+import { MAC_UPLOAD_RETRY } from "@/lib/mac/registry";
 import { storeArtistFile } from "@/lib/payments/service";
 import type { Store } from "@/lib/store";
 import type { FileKind, Submission } from "@/lib/types";
@@ -27,6 +29,32 @@ export async function receiveArtistUpload(
   if (!checked.ok) {
     await rest.cancel().catch(() => undefined);
     throw new AppError(400, checked.error, "invalid_file");
+  }
+
+  if (store.kind === "mac") {
+    const chunks: Uint8Array[] = [prefix];
+    const reader = rest.getReader();
+    let size = prefix.byteLength;
+    const limit = limitFor(kind);
+    while (true) {
+      const next = await reader.read();
+      if (next.done) break;
+      size += next.value.byteLength;
+      if (size > limit) {
+        await reader.cancel().catch(() => undefined);
+        throw new AppError(400, checkSize(kind, size) || "That file is too large.", "invalid_file");
+      }
+      chunks.push(next.value);
+    }
+    const bytes = Buffer.from(concatChunks(chunks));
+    const checkedFull = validateUpload({ kind, filename, mime: checked.mime, bytes });
+    if (!checkedFull.ok) throw new AppError(400, checkedFull.error, "invalid_file");
+    try {
+      return await macUpload(submission.id, kind, filename, checkedFull.mime, bytes);
+    } catch (error) {
+      if (error instanceof AppError && error.code === "mac_offline") throw error;
+      throw new AppError(502, error instanceof AppError ? error.message : MAC_UPLOAD_RETRY, "mac_upload");
+    }
   }
 
   if (store.kind !== "sheets") {

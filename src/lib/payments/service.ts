@@ -7,7 +7,8 @@ import { cashtagLooksValid, normalizeCashtag, noteIncludesPublicId } from "@/lib
 import { parseProfile, profileReadyForPayment, type ProfileInput } from "@/lib/profile";
 import { buildSquarePaymentLinkBody } from "@/lib/payments/square";
 import { buildStripeCheckoutBody, type ParsedProviderPayment } from "@/lib/payments/stripe";
-import type { Store } from "@/lib/store";
+import { macLink } from "@/lib/mac/registry";
+import { usesMacStorage, type Store } from "@/lib/store";
 import type { FileKind, PaymentProviderId, PublicSettings, Settings, Submission, SubmissionStatus } from "@/lib/types";
 
 const ARTIST_EDITABLE: SubmissionStatus[] = ["draft", "awaiting_payment"];
@@ -46,6 +47,7 @@ export function toPublicSettings(settings: Settings): PublicSettings {
     instagramUrl: settings.instagramUrl,
     genreOptions: settings.genreOptions,
     legalIsDraft: settings.legalIsDraft,
+    macOnline: usesMacStorage() ? macLink().online : true,
   };
 }
 
@@ -336,13 +338,15 @@ export async function markPaid(
     await store.patch(outcome.submission.id, { confirmationEmailSentAt: new Date().toISOString() });
   }
   const fresh = (await store.getSubmission(outcome.submission.id)) ?? outcome.submission;
-  let driveStatus = "skipped_unconfigured";
-  try {
-    const { archivePaidSubmission } = await import("@/lib/drive/archive");
-    driveStatus = (await archivePaidSubmission(store, fresh)).status;
-  } catch (error) {
-    console.error(error);
-    driveStatus = "failed";
+  let driveStatus = store.kind === "mac" ? "mac" : "skipped_unconfigured";
+  if (store.kind !== "mac") {
+    try {
+      const { archivePaidSubmission } = await import("@/lib/drive/archive");
+      driveStatus = (await archivePaidSubmission(store, fresh)).status;
+    } catch (error) {
+      console.error(error);
+      driveStatus = "failed";
+    }
   }
   const afterDrive = (await store.getSubmission(fresh.id)) ?? fresh;
   return {

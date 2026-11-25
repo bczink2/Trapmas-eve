@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 function mediaFor(submission: Submission, slot: "photo" | "song1" | "song2") {
-  if (submission.fileHold === "computer") return "";
   const key = slot === "photo" ? submission.photoKey : slot === "song1" ? submission.song1Key : submission.song2Key;
   const driveId =
     slot === "photo" ? submission.photoDriveId : slot === "song1" ? submission.song1DriveId : submission.song2DriveId;
+  if (submission.fileHold === "computer" && !key.startsWith("mac/")) return "";
   if (!key && !driveId) return "";
   return signedMediaPath({ key, driveId });
 }

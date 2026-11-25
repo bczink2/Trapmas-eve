@@ -14,7 +14,8 @@ export function GET(_request: Request, context: { params: Promise<{ id: string }
     const store = await getStore();
     const submission = await store.getSubmission(id);
     if (!submission) return json({ error: "Submission not found." }, 404);
-    if (submission.fileHold === "computer") {
+    const onMac = submission.photoKey.startsWith("mac/") || submission.song1Key.startsWith("mac/") || submission.song2Key.startsWith("mac/");
+    if (submission.fileHold === "computer" && !onMac) {
       return json({ error: "Saved to computer. The server copy is already gone." }, 409);
     }
     const bundle = await submissionBundle(store, submission, await store.getSettings());

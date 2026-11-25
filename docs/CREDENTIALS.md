@@ -11,6 +11,7 @@ Put secrets in Render's environment, or in `.env.local` on a computer. Do not co
 | Desk password | `ADMIN_PASSWORD` |
 | Long random string | `ADMIN_SESSION_SECRET` |
 | A different long random string for the sync script | `ADMIN_EXPORT_TOKEN` |
+| The same long random string on Render and the Mac | `MAC_RECEIVER_SECRET` |
 
 Locally, until `ADMIN_PASSWORD` is set, the password is `trapmas-dev`.
 

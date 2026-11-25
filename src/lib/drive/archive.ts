@@ -147,8 +147,13 @@ export async function readHeldFile(
   slot: "photo" | "song1" | "song2",
   drive: DriveClient | null = driveClientFromEnv(),
 ): Promise<{ data: Buffer; contentType: string } | null> {
-  if (submission.fileHold === "computer") return null;
   const key = slot === "photo" ? submission.photoKey : slot === "song1" ? submission.song1Key : submission.song2Key;
+  if (key.startsWith("mac/")) {
+    const { macDownload } = await import("@/lib/mac/client");
+    const stored = await macDownload(`/v1/files/${submission.id}/${slot}`);
+    return stored;
+  }
+  if (submission.fileHold === "computer") return null;
   const driveId =
     slot === "photo" ? submission.photoDriveId : slot === "song1" ? submission.song1DriveId : submission.song2DriveId;
   if (key) {

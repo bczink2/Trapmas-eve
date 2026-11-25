@@ -50,7 +50,7 @@ export type UploadRecord = {
 };
 
 export type Store = {
-  kind: "sqlite" | "sheets" | "memory";
+  kind: "sqlite" | "sheets" | "memory" | "mac";
   getSettings(): Promise<Settings>;
   updateSettings(patch: Partial<Settings>): Promise<Settings>;
   createSubmission(profile: ProfileInput): Promise<{ submission: Submission; resumeToken: string }>;
@@ -210,7 +210,15 @@ export function sqliteStore(db: Database): Store {
 let sheetsPromise: Promise<Store> | null = null;
 let cleanupStarted = false;
 
+export function usesMacStorage(): boolean {
+  return process.env.NODE_ENV === "production" || Boolean(process.env.MAC_RECEIVER_SECRET);
+}
+
 export async function getStore(): Promise<Store> {
+  if (usesMacStorage()) {
+    const { macStore } = await import("@/lib/mac/store");
+    return macStore();
+  }
   if (driveConfigured()) {
     sheetsPromise ??= import("@/lib/sheets/store")
       .then((mod) => mod.sheetsStore())

@@ -2,6 +2,8 @@ import { googleDriveClient } from "@/lib/drive/google";
 import { AppError } from "@/lib/errors";
 import { deleteObject, getObject, putObject, type StoredFile } from "@/lib/files/storage";
 import { isJpeg, isPng, isWebp } from "@/lib/files/validate";
+import { macClearBranding, macDownload, macSaveBranding } from "@/lib/mac/client";
+import type { Settings } from "@/lib/types";
 import type { Store } from "@/lib/store";
 import { mainFolderName } from "@/lib/sync-lib.mjs";
 
@@ -14,6 +16,9 @@ function contentType(bytes: Uint8Array): string {
 
 export async function readBranding(key: string): Promise<StoredFile | null> {
   if (!key) return null;
+  if (key === "mac:artwork" || key === "mac:qr") {
+    return macDownload(`/v1/branding/${key.slice(4)}`);
+  }
   if (key.startsWith("drive:")) {
     const data = await googleDriveClient().download(key.slice("drive:".length));
     return { data, contentType: contentType(data) };
@@ -33,6 +38,9 @@ export async function saveBranding(
   const field = slot === "artwork" ? "artworkKey" : "cashappQrKey";
   const previous = settings[field];
   let key = "";
+  if (store.kind === "mac") {
+    return (await macSaveBranding(slot, file.bytes, file.mime)) as Settings;
+  }
   if (store.kind === "sheets") {
     const drive = googleDriveClient();
     const event = await drive.ensureFolder(
@@ -58,6 +66,7 @@ export async function clearBranding(store: Store, slot: "artwork" | "qr") {
   const settings = await store.getSettings();
   const field = slot === "artwork" ? "artworkKey" : "cashappQrKey";
   const previous = settings[field];
+  if (store.kind === "mac") return (await macClearBranding(slot)) as Settings;
   const updated = await store.updateSettings({ [field]: "" });
   if (previous.startsWith("drive:")) await googleDriveClient().remove(previous.slice("drive:".length)).catch(() => undefined);
   else if (previous) await deleteObject(previous).catch(() => undefined);

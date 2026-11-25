@@ -1,5 +1,9 @@
 # Files on your computer
 
+Songs now go straight to BC's Mac. See [mac-agent/README.md](../mac-agent/README.md). The Drive sync script below is legacy and is not the live path.
+
+# Legacy Drive sync
+
 While an artist is still applying, the photo and both MP3s stream into `Pending/TRAP-###/` in Google Drive. The application row is in the Sheet `TRAPMAS submissions` in the same event folder. Render does not keep a copy.
 
 When you mark a submission paid, those files move into the artist folder and `info.txt` is added:

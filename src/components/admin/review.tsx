@@ -122,7 +122,7 @@ export function Review({ id }: { id: string }) {
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <section className="space-y-4">
-          {submission.fileHold === "computer" ? (
+          {submission.fileHold === "computer" && !submission.photoKey.startsWith("mac/") && !submission.song1Key.startsWith("mac/") ? (
             <p className="rounded-2xl border border-primary/40 bg-card p-4">Saved to computer. Playback stays on your machine.</p>
           ) : (
             <>

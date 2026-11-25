@@ -314,6 +314,15 @@ export function ApplyWizard({
     }
   }
 
+  if (settings.macOnline === false) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <h2 className="display text-3xl text-primary">Submissions are paused</h2>
+        <p className="mt-2 text-muted-foreground">Submissions are paused for a moment, please try again in a few minutes.</p>
+      </div>
+    );
+  }
+
   if (!settings.applicationsOpen && !application) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5">
